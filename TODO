@@ -1,0 +1,2 @@
+- Comparative function: compare cpu and gpu implementation time of the same
+operation. Initialise all needed data. May be needed to be in macro.

@@ -1,21 +1,30 @@
+#include <stdlib.h>
+
 #define DTYPE float
+#define N 42
+#ifdef NO_CUDA
+  #define only_cuda(X)
+#else
+  #define only_cuda(X) X
+#endif
 
-__global__
-void add_k(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
-{
-  size_t i = threadIdx.x;
-  if (i < n)
-    out[i] = a[i] + b[i];
-}
 
-__host__
+only_cuda(__host__)
 void add_cpu(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
 {
   for (size_t i = 0; i < n; i++)
     out[i] = a[i] + b[i];
 }
 
-__host__
+only_cuda(__global__
+void add_k(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
+{
+  size_t i = threadIdx.x;
+  if (i < n)
+    out[i] = a[i] + b[i];
+})
+
+only_cuda((__host__
 void add_gpu(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
 {
   const int size = n * sizeof(DTYPE);
@@ -32,9 +41,15 @@ void add_gpu(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
   // Timer end
 
   cudaMemcpy(out, outG, size, cudaMemcpyDeviceToHost);
-}
+}))
 
-int main()
+int main(void (*fun)(int, char, ...))
 {
+  /*size_t size = N * sizeof(DTYPE);
+  int *a = (void *) malloc(size);
+  int *b = (void *) malloc(size);
+  int *out = (void *) malloc(size);
+
+*/  
   return 0;
 }
