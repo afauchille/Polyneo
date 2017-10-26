@@ -60,5 +60,5 @@ int main(int argc, char **argv)
   print_mat(out_cpu, N * N);
   print_mat(out_gpu, N * N);
 
-  return 0;
+  return MatrixCmp(out_cpu, out_gpu, N * N);
 }
