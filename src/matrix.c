@@ -3,7 +3,7 @@
 #include "matrix.h"
 #include "helpers.h"
 
-#define N 42
+#define N 3
 #ifdef NO_CUDA
   #define only_cuda(X)
 #else
@@ -51,13 +51,14 @@ int main(int argc, char **argv)
 {
   float *a = RandomMatrix(N, N);
   float *b = RandomMatrix(N, N);
-  a[0] = 1;
-  b[0] = 2;
-  print_mat(a, N);
-  print_mat(b, N);
-  float *out = RandomMatrix(N, N);
-  add_cpu(a, b, out, N);
-  print_mat(out, N);
+  float *out_cpu = UninitializedMatrix(N, N);
+  float *out_gpu = UninitializedMatrix(N, N);
+  print_mat(a, N * N);
+  print_mat(b, N * N);
+  add_cpu(a, b, out_cpu, N * N);
+  add_gpu(a, b, out_gpu, N * N);
+  print_mat(out_cpu, N * N);
+  print_mat(out_gpu, N * N);
 
   return 0;
 }
