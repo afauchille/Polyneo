@@ -3,7 +3,6 @@
 
 #include "helpers.h"
 
-
 float *RandomMatrix(size_t w, size_t h)
 {
   size_t n = w * h;
@@ -39,6 +38,20 @@ void print_mat(float *matrix, size_t n)
       printf("\n%3f ", matrix[i]);
     else
       printf("%3f ", matrix[i]);
+  }
+  printf("\n");
+}
+
+void print_matrix(struct Matrix *matrix)
+{
+  //size_t nb_lines = matrix->w;
+  size_t nb_lines = 10;
+  for (size_t i = 0; i < matrix->w * matrix->h ; ++i)
+  {
+    if (i % nb_lines == 0)
+      printf("\n%3f ", matrix->data[i]);
+    else
+      printf("%3f ", matrix->data[i]);
   }
   printf("\n");
 }
