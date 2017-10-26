@@ -26,7 +26,7 @@ void add_k(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
     out[i] = a[i] + b[i];
 })
 
-#ifdef NO_CUDA
+#ifndef NO_CUDA
 __host__
 void add_gpu(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
 {
@@ -47,11 +47,17 @@ void add_gpu(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
 }
 #endif
 
-int main()
+int main(int argc, char **argv)
 {
   float *a = RandomMatrix(N, N);
   float *b = RandomMatrix(N, N);
+  a[0] = 1;
+  b[0] = 2;
+  print_mat(a, N);
+  print_mat(b, N);
   float *out = RandomMatrix(N, N);
+  add_cpu(a, b, out, N);
+  print_mat(out, N);
 
   return 0;
 }
