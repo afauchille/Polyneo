@@ -2,3 +2,4 @@
 operation. Initialise all needed data. May be needed to be in macro.
 - Make matrix struct, change functions signatures according to it, and check
 matrices dimensions at the beginning of functions.
+- Add matrices creation function (i.e: RandomMatrix(w, h, low=0., high=1.))
