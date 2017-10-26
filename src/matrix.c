@@ -1,6 +1,8 @@
 #include <stdlib.h>
 
-#define DTYPE float
+#include "matrix.h"
+#include "helpers.h"
+
 #define N 42
 #ifdef NO_CUDA
   #define only_cuda(X)
@@ -24,7 +26,8 @@ void add_k(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
     out[i] = a[i] + b[i];
 })
 
-only_cuda((__host__
+#ifdef NO_CUDA
+__host__
 void add_gpu(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
 {
   const int size = n * sizeof(DTYPE);
@@ -41,15 +44,14 @@ void add_gpu(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
   // Timer end
 
   cudaMemcpy(out, outG, size, cudaMemcpyDeviceToHost);
-}))
+}
+#endif
 
-int main(void (*fun)(int, char, ...))
+int main()
 {
-  /*size_t size = N * sizeof(DTYPE);
-  int *a = (void *) malloc(size);
-  int *b = (void *) malloc(size);
-  int *out = (void *) malloc(size);
+  float *a = RandomMatrix(N, N);
+  float *b = RandomMatrix(N, N);
+  float *out = RandomMatrix(N, N);
 
-*/  
   return 0;
 }
