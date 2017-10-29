@@ -1,4 +1,7 @@
 *.i
+*.swn
+*.swo
+*.swp
 *.ii
 *.gpu
 *.ptx

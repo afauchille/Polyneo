@@ -88,6 +88,33 @@ void sc_mult_cpu(struct Matrix a, DTYPE lambda, struct Matrix out, size_t n, dou
     out.data[i] = a.data[i] * lambda;
 }
 
+/************************
+* Vector multiplication *
+*************************/
+
+// TODO: add in place version
+only_cuda(__host__)
+void vec_mult_cpu(struct Matrix a, struct Matrix b, struct Matrix out, size_t n, double *time)
+{
+  out.h = a.h;
+  out.w = b.w;
+  // Exception si a.h != b.w
+  for (int i = 0; i < out.h; ++i)
+    for (int j = 0; j < out.w; ++j)
+    {
+      float somme = 0;
+      for (int k = 0; k < out.w; ++k)
+      {
+        int indice2 = out.h * k + i;
+        int indice1 = out.h * j + k;
+        printf("indice1: %d\tindice2: %d\n", indice1, indice2);
+        somme += a.data[indice1] * b.data[indice2];
+        printf("%f\n", somme);
+      }
+      out.data[out.h * j + i] = somme;
+    }
+}
+
 
 int main(int argc, char **argv)
 {
@@ -96,10 +123,25 @@ int main(int argc, char **argv)
   struct Matrix out_cpu = UninitializedMatrix(N, N);
   struct Matrix out_gpu = UninitializedMatrix(N, N);
   double time_cpu, time_gpu;
+
+  // init
+  a.data[0] = 1.0;
+  a.data[1] = 2.0;
+  a.data[2] = 3.0;
+  b.data[0] = 1.0;
+  b.data[1] = 0.0;
+  b.data[4] = 0.0;
+  b.data[7] = 1.0;
+  b.data[3] = 1.0;
+  b.data[6] = 1.0;
+
   print_matrix(a);
   print_matrix(b);
-  add_cpu(a, b, out_cpu, &time_cpu);
+
+  // add_cpu(a, b, out_cpu, &time_cpu);
   add_gpu(a, b, out_gpu, &time_gpu);
+  vec_mult_cpu(a, b, out_cpu, N, &time_cpu);
+
   print_matrix(out_cpu);
   print_matrix(out_gpu);
 
