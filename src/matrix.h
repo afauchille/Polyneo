@@ -1,12 +1,12 @@
 #ifndef MATRIX_H 
 #define MATRIX_H
-#define DTYPE float
+#define DTYPE double
 #define DSIZE sizeof(DTYPE)
 
 struct Matrix {
-  float* data;
+  DTYPE* data;
   size_t w;
   size_t h;
-} ;
+};
 
 #endif

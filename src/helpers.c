@@ -3,28 +3,53 @@
 
 #include "helpers.h"
 
-float *RandomMatrix(size_t w, size_t h)
+// This is a floating point data implementation. If DTYPE == int or similar the function has undefined behaviour
+struct Matrix RandomMatrix(size_t w, size_t h)
 {
+  struct Matrix m;
+  m.w = w;
+  m.h = h;
   size_t n = w * h;
-  size_t size = n * sizeof(DTYPE);
-  float *p = (float*)malloc(size);
+  m.data = (DTYPE*)malloc(n * DSIZE);
   for (size_t i = 0; i < n; ++i)
-    p[i] = (float)rand() / (float)RAND_MAX;
-  return p;
+    m.data[i] = (DTYPE)rand() / (DTYPE)RAND_MAX;
+  return m;
 }
 
-float *UninitializedMatrix(size_t w, size_t h)
+struct Matrix UninitializedMatrix(size_t w, size_t h)
 {
+  struct Matrix m;
+  m.w = w;
+  m.h = h;
   size_t n = w * h;
-  size_t size = n * sizeof(DTYPE);
-  float *p = (float*)malloc(size);
-  return p;
+  m.data = (DTYPE*)malloc(n * DSIZE);
+  return m;
 }
 
-int MatrixCmp(const DTYPE *a, const DTYPE *b, size_t size)
+// A NULL-equivalent Matrix. Some functions accept a NoneMatrix as one of its argument, that modifies its behaviour.
+struct Matrix NoneMatrix()
 {
-  for (size_t i=  0; i < size; ++i)
-    if (a[i] != b[i])
+  struct Matrix m;
+  m.data = NULL;
+  m.w = 0;
+  m.h = 0;
+  return m;
+}
+
+int IsNoneMatrix(struct Matrix m)
+{
+  return m.data == NULL && m.w == 0 && m.h == 0;
+}
+
+
+// 1 => False, 0 => True
+int MatrixCmp(struct Matrix a, struct Matrix b)
+{
+  if (a.w != b.w || a.h != b.h)
+    return 1;
+  size_t n = a.w * a.h;
+  for (size_t i=  0; i < n; ++i)
+    if (a.data[i] != b.data[i])
       return 1;
   return 0;
 }
@@ -42,16 +67,16 @@ void print_mat(float *matrix, size_t n)
   printf("\n");
 }
 
-void print_matrix(struct Matrix *matrix)
+void print_matrix(struct Matrix matrix)
 {
   //size_t nb_lines = matrix->w;
   size_t nb_lines = 10;
-  for (size_t i = 0; i < matrix->w * matrix->h ; ++i)
+  for (size_t i = 0; i < matrix.w * matrix.h ; ++i)
   {
     if (i % nb_lines == 0)
-      printf("\n%3f ", matrix->data[i]);
+      printf("\n%3f ", matrix.data[i]);
     else
-      printf("%3f ", matrix->data[i]);
+      printf("%3f ", matrix.data[i]);
   }
   printf("\n");
 }
