@@ -41,6 +41,16 @@ int IsNoneMatrix(struct Matrix m)
   return m.data == NULL && m.w == 0 && m.h == 0;
 }
 
+struct Matrix cp_gpu(struct Matrix a)
+{
+  struct Matrix res;
+  const size_t size = a.w * a.h * DSIZE;
+  cudaMalloc((void**)&(res.data), size);
+  cudaMemcpy(res.data, a.data, size, cudaMemcpyHostToDevice);
+  res.w = a.w;
+  res.h = a.h;
+  return res;
+}
 
 // 1 => False, 0 => True
 int MatrixCmp(struct Matrix a, struct Matrix b)
