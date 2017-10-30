@@ -68,7 +68,6 @@ void add_gpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
   cudaMalloc((void **) &outG, size);
   cudaMemcpy(aG, a.data, size, cudaMemcpyHostToDevice);
   cudaMemcpy(bG, b.data, size, cudaMemcpyHostToDevice);
-  cudaMemcpy(outG, out.data, size, cudaMemcpyHostToDevice);
 
   cudaCheckError();
 
@@ -101,6 +100,43 @@ void sc_mult_cpu(struct Matrix a, DTYPE lambda, struct Matrix out, double *time)
 {
   for (int i = 0; i < a.w * a.h; ++i)
     out.data[i] = a.data[i] * lambda;
+}
+
+only_cuda(__global__
+void sc_mult_k(const DTYPE *a, DTYPE lambda, DTYPE *out, size_t n)
+{
+  size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < n)
+    out[i] = lambda * a[i];
+})
+
+void sc_mult_gpu(struct Matrix a, DTYPE lambda, struct Matrix out, double *time)
+{
+  const size_t n = a.w * a.h;
+  const size_t size = n * DSIZE;
+  DTYPE *aG, *outG;
+  cudaMalloc((void **) &aG, size);
+  cudaMalloc((void **) &outG, size);
+  cudaMemcpy(aG, a.data, size, cudaMemcpyHostToDevice);
+
+  cudaCheckError();
+
+  int threads = 128;
+  int blocks = (n + threads - 1) / threads;
+
+  // Timer start
+  CLOCK_START();
+
+  sc_mult_k<<<blocks, threads>>>(aG, lambda, outG, n);
+  cudaDeviceSynchronize();
+
+  cudaCheckError();
+
+  // Timer end
+  CLOCK_STOP(time);
+
+  cudaMemcpy(out.data, outG, size, cudaMemcpyDeviceToHost);
+  cudaCheckError();
 }
 
 /*********************************
