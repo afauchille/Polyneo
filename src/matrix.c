@@ -28,6 +28,8 @@
     }									\
   }
 
+#define GET(M, X, Y) M.data[M.w * Y + X]
+#define SET(M, X, Y, DATA) M.data[M.w * Y + X] = DATA
 
 /***********
 * Addition *
@@ -147,9 +149,9 @@ struct Matrix sc_mult_gpu(struct Matrix a, DTYPE lambda, double *time)
   return out;
 }
 
-/*********************************
-* Matrix & Vector multiplication *
-**********************************/
+/************************
+* Vector multiplication *
+*************************/
 
 // TODO: add in place version
 only_cuda(__host__)
@@ -171,6 +173,79 @@ struct Matrix vec_mult_cpu(struct Matrix a, struct Matrix b, double *time)
       }
       out.data[out.h * j + i] = somme;
     }
+  return out;
+}
+
+/************************
+* Matrix multiplication *
+*************************/
+
+only_cuda(__host__)
+struct Matrix mat_mult_cpu(struct Matrix a, struct Matrix b, double *time)
+{
+  assert(a.w == b.h);
+  struct Matrix out = UninitializedMatrix(a.h, b.w);
+  for (size_t i = 0; i < a.h; ++i)
+    {
+      for (int j = 0; j < b.w; ++j)
+        {
+          DTYPE res = 0;
+          for (int k = 0; k < a.w; ++k)
+            res += GET(a, k, j) * GET(b, i, k);
+          SET(out, i, j, res);
+        }
+    }
+  return out;
+}
+
+only_cuda(__global__
+void mat_mult_k(struct Matrix a, struct Matrix b, struct Matrix out)
+{
+  size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t j = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if (i >= out.w || j >= out.h)
+    return;
+
+  DTYPE res = 0;
+  for (size_t k = 0; k < a.w; k++)
+    res += GET(a, k, j) * GET(b, i, k);
+  SET(out, i, j, res);
+})
+
+only_cuda(__host__)
+struct Matrix mat_mult_gpu(struct Matrix a, struct Matrix b, double *time)
+{
+  const size_t n = a.w * a.h;
+  const size_t size = n * DSIZE;
+  DTYPE *aG, *bG, *outG;
+  cudaMalloc((void **) &aG, size);
+  cudaMalloc((void **) &bG, size);
+  cudaMalloc((void **) &outG, size);
+  cudaMemcpy(aG, a.data, size, cudaMemcpyHostToDevice);
+  cudaMemcpy(bG, b.data, size, cudaMemcpyHostToDevice);
+  struct Matrix out = UninitializedMatrix(a.h, b.w);
+
+  cudaCheckError();
+
+  // TODO: more dim
+  //int threads = 128;
+  //int blocks = (n + threads - 1) / threads;
+
+  // Timer start
+  CLOCK_START();
+
+  //mat_mult_k<<<blocks, threads>>>(aG, bG, outG);
+  cudaDeviceSynchronize();
+
+  cudaCheckError();
+
+  // Timer end
+  CLOCK_STOP(time);
+
+  cudaMemcpy(out.data, outG, size, cudaMemcpyDeviceToHost);
+  cudaCheckError();
+
   return out;
 }
 
