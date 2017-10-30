@@ -34,9 +34,10 @@
 ***********/
 
 only_cuda(__host__)
-void add_cpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
+struct Matrix add_cpu(struct Matrix a, struct Matrix b, double *time)
 {
   assert(a.w == b.w && a.h == b.h);
+  struct Matrix out = UninitializedMatrix(a.w, a.h);
   const size_t n = a.w * a.h;
 
   // Timer start
@@ -45,6 +46,7 @@ void add_cpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
     out.data[i] = a.data[i] + b.data[i];
   // Timer end
   CLOCK_STOP(time);
+  return out;
 }
 
 only_cuda(__global__
@@ -57,9 +59,10 @@ void add_k(const DTYPE *a, const DTYPE *b, DTYPE *out, size_t n)
 
 #ifndef NO_CUDA
 __host__
-void add_gpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
+struct Matrix add_gpu(struct Matrix a, struct Matrix b, double *time)
 {
   assert(a.w == b.w && a.h == b.h);
+  struct Matrix out = UninitializedMatrix(a.w, a.h);
   const size_t n = a.w * a.h;
   const size_t size = n * DSIZE;
   DTYPE *aG, *bG, *outG;
@@ -87,6 +90,7 @@ void add_gpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
 
   cudaMemcpy(out.data, outG, size, cudaMemcpyDeviceToHost);
   cudaCheckError();
+  return out;
 }
 #endif
 
@@ -96,10 +100,12 @@ void add_gpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
 
 // TODO: add in place version
 only_cuda(__host__)
-void sc_mult_cpu(struct Matrix a, DTYPE lambda, struct Matrix out, double *time)
+struct Matrix sc_mult_cpu(struct Matrix a, DTYPE lambda, double *time)
 {
+  struct Matrix out = UninitializedMatrix(a.w, a.h);
   for (int i = 0; i < a.w * a.h; ++i)
     out.data[i] = a.data[i] * lambda;
+  return out;
 }
 
 only_cuda(__global__
@@ -110,8 +116,9 @@ void sc_mult_k(const DTYPE *a, DTYPE lambda, DTYPE *out, size_t n)
     out[i] = lambda * a[i];
 })
 
-void sc_mult_gpu(struct Matrix a, DTYPE lambda, struct Matrix out, double *time)
+struct Matrix sc_mult_gpu(struct Matrix a, DTYPE lambda, double *time)
 {
+  struct Matrix out = UninitializedMatrix(a.w, a.h);
   const size_t n = a.w * a.h;
   const size_t size = n * DSIZE;
   DTYPE *aG, *outG;
@@ -137,6 +144,7 @@ void sc_mult_gpu(struct Matrix a, DTYPE lambda, struct Matrix out, double *time)
 
   cudaMemcpy(out.data, outG, size, cudaMemcpyDeviceToHost);
   cudaCheckError();
+  return out;
 }
 
 /*********************************
@@ -145,10 +153,9 @@ void sc_mult_gpu(struct Matrix a, DTYPE lambda, struct Matrix out, double *time)
 
 // TODO: add in place version
 only_cuda(__host__)
-void vec_mult_cpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
+struct Matrix vec_mult_cpu(struct Matrix a, struct Matrix b, double *time)
 {
-  out.h = a.h;
-  out.w = b.w;
+  struct Matrix out = UninitializedMatrix(b.w, a.h);
   // Exception si a.h != b.w
   for (int i = 0; i < out.h; ++i)
     for (int j = 0; j < out.w; ++j)
@@ -164,6 +171,7 @@ void vec_mult_cpu(struct Matrix a, struct Matrix b, struct Matrix out, double *t
       }
       out.data[out.h * j + i] = somme;
     }
+  return out;
 }
 
 /**********
@@ -171,13 +179,11 @@ void vec_mult_cpu(struct Matrix a, struct Matrix b, struct Matrix out, double *t
 ***********/
 
 int compare_results(
-  void (*fun_cpu)(struct Matrix, struct Matrix, struct Matrix, double *),
-  void (*fun_gpu)(struct Matrix, struct Matrix, struct Matrix, double *),
+  struct Matrix (*fun_cpu)(struct Matrix, struct Matrix, double *),
+  struct Matrix (*fun_gpu)(struct Matrix, struct Matrix, double *),
   struct Matrix a, struct Matrix b)
 {
   /* Initialization */
-  struct Matrix out_cpu = UninitializedMatrix(N, N);
-  struct Matrix out_gpu = UninitializedMatrix(N, N);
   double time_cpu, time_gpu;
   
   a.data[0] = 1.0;
@@ -195,8 +201,8 @@ int compare_results(
   print_matrix(b);
 
   /* Running */
-  (*fun_cpu)(a, b, out_cpu, &time_cpu);
-  (*fun_gpu)(a, b, out_gpu, &time_gpu);
+  struct Matrix out_cpu = (*fun_cpu)(a, b, &time_cpu);
+  struct Matrix out_gpu = (*fun_gpu)(a, b, &time_gpu);
   
   printf("* CPU output:\n");
   print_matrix(out_cpu);
