@@ -88,9 +88,9 @@ void sc_mult_cpu(struct Matrix a, DTYPE lambda, struct Matrix out, size_t n, dou
     out.data[i] = a.data[i] * lambda;
 }
 
-/************************
-* Vector multiplication *
-*************************/
+/*********************************
+* Matrix & Vector multiplication *
+**********************************/
 
 // TODO: add in place version
 only_cuda(__host__)
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
   struct Matrix out_gpu = UninitializedMatrix(N, N);
   double time_cpu, time_gpu;
 
-  // init
+  /* Initialization */
   a.data[0] = 1.0;
   a.data[1] = 2.0;
   a.data[2] = 3.0;
@@ -138,6 +138,7 @@ int main(int argc, char **argv)
   print_matrix(a);
   print_matrix(b);
 
+  /* Run calculus */
   // add_cpu(a, b, out_cpu, &time_cpu);
   add_gpu(a, b, out_gpu, &time_gpu);
   vec_mult_cpu(a, b, out_cpu, N, &time_cpu);
