@@ -70,6 +70,8 @@ void add_gpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
   cudaMemcpy(bG, b.data, size, cudaMemcpyHostToDevice);
   cudaMemcpy(outG, out.data, size, cudaMemcpyHostToDevice);
 
+  cudaCheckError();
+
   int threads = 128;
   int blocks = (n + threads - 1) / threads;
 
@@ -77,10 +79,15 @@ void add_gpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
   CLOCK_START();
 
   add_k<<<blocks, threads>>>(aG, bG, outG, n);
+  cudaDeviceSynchronize();
+
+  cudaCheckError();
+
   // Timer end
   CLOCK_STOP(time);
 
   cudaMemcpy(out.data, outG, size, cudaMemcpyDeviceToHost);
+  cudaCheckError();
 }
 #endif
 
