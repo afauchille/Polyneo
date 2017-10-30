@@ -82,9 +82,9 @@ void add_gpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
 
 // TODO: add in place version
 only_cuda(__host__)
-void sc_mult_cpu(struct Matrix a, DTYPE lambda, struct Matrix out, size_t n, double *time)
+void sc_mult_cpu(struct Matrix a, DTYPE lambda, struct Matrix out, double *time)
 {
-  for (int i = 0; i < n; ++i)
+  for (int i = 0; i < a.w * a.h; ++i)
     out.data[i] = a.data[i] * lambda;
 }
 
@@ -94,7 +94,7 @@ void sc_mult_cpu(struct Matrix a, DTYPE lambda, struct Matrix out, size_t n, dou
 
 // TODO: add in place version
 only_cuda(__host__)
-void vec_mult_cpu(struct Matrix a, struct Matrix b, struct Matrix out, size_t n, double *time)
+void vec_mult_cpu(struct Matrix a, struct Matrix b, struct Matrix out, double *time)
 {
   out.h = a.h;
   out.w = b.w;
@@ -168,13 +168,11 @@ int main(int argc, char **argv)
 {
   struct Matrix a = RandomMatrix(N, N);
   struct Matrix b = RandomMatrix(N, N);
+
   /*
   struct Matrix out_cpu = UninitializedMatrix(N, N);
   struct Matrix out_gpu = UninitializedMatrix(N, N);
-  */
 
-  /* Run calculus */
-  /*
   add_cpu(a, b, out_cpu, &time_cpu);
   add_gpu(a, b, out_gpu, &time_gpu);
   vec_mult_cpu(a, b, out_cpu, N, &time_cpu);
