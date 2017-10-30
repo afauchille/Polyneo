@@ -73,7 +73,7 @@ void print_matrix(struct Matrix matrix)
   size_t nb_lines = 10;
   for (size_t i = 0; i < matrix.w * matrix.h ; ++i)
   {
-    if (i % nb_lines == 0)
+    if (i != 0 && i % nb_lines == 0)
       printf("\n%3f ", matrix.data[i]);
     else
       printf("%3f ", matrix.data[i]);

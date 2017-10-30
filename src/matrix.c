@@ -115,16 +115,20 @@ void vec_mult_cpu(struct Matrix a, struct Matrix b, struct Matrix out, size_t n,
     }
 }
 
+/**********
+* Compare * 
+***********/
 
-int main(int argc, char **argv)
+int compare_results(
+  void (*fun_cpu)(struct Matrix, struct Matrix, struct Matrix, double *),
+  void (*fun_gpu)(struct Matrix, struct Matrix, struct Matrix, double *),
+  struct Matrix a, struct Matrix b)
 {
-  struct Matrix a = RandomMatrix(N, N);
-  struct Matrix b = RandomMatrix(N, N);
+  /* Initialization */
   struct Matrix out_cpu = UninitializedMatrix(N, N);
   struct Matrix out_gpu = UninitializedMatrix(N, N);
   double time_cpu, time_gpu;
-
-  /* Initialization */
+  
   a.data[0] = 1.0;
   a.data[1] = 2.0;
   a.data[2] = 3.0;
@@ -135,18 +139,46 @@ int main(int argc, char **argv)
   b.data[3] = 1.0;
   b.data[6] = 1.0;
 
+  printf("* Inputs:\n");
   print_matrix(a);
   print_matrix(b);
 
-  /* Run calculus */
-  // add_cpu(a, b, out_cpu, &time_cpu);
-  add_gpu(a, b, out_gpu, &time_gpu);
-  vec_mult_cpu(a, b, out_cpu, N, &time_cpu);
-
+  /* Running */
+  (*fun_cpu)(a, b, out_cpu, &time_cpu);
+  (*fun_gpu)(a, b, out_gpu, &time_gpu);
+  
+  printf("* CPU output:\n");
   print_matrix(out_cpu);
+  printf("* GPU output:\n");
   print_matrix(out_gpu);
 
-  printf("Time taken:\n- CPU: %fs\n- GPU: %fs\n", time_cpu, time_gpu);
+  /* Display time & Output */
+  printf("* Time taken:\nCPU: %fs\nGPU: %fs\n", time_cpu, time_gpu);
 
-  return MatrixCmp(out_cpu, out_gpu);
+  int result = MatrixCmp(out_cpu, out_gpu);
+  if (result == 0)
+    printf("Output are the same!\n");
+  else
+    printf("*** Error: Outputs are differents.\n");
+  return result;
+}
+
+
+int main(int argc, char **argv)
+{
+  struct Matrix a = RandomMatrix(N, N);
+  struct Matrix b = RandomMatrix(N, N);
+  /*
+  struct Matrix out_cpu = UninitializedMatrix(N, N);
+  struct Matrix out_gpu = UninitializedMatrix(N, N);
+  */
+
+  /* Run calculus */
+  /*
+  add_cpu(a, b, out_cpu, &time_cpu);
+  add_gpu(a, b, out_gpu, &time_gpu);
+  vec_mult_cpu(a, b, out_cpu, N, &time_cpu);
+  */
+
+  return compare_results(&add_cpu, &add_gpu, a, b); 
 }
