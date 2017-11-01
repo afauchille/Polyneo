@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include "matrix.h"
-#include "helpers.h"
+#include "cuperf.h"
 
 #define N 3
 
@@ -13,12 +13,6 @@
 #else
   #define only_cuda(X) X
 #endif
-
-#define CLOCK_START() struct timespec t_start = {0, 0}, t_end = {0, 0};\
-  clock_gettime(CLOCK_MONOTONIC, &t_start);
-
-#define CLOCK_STOP(X) clock_gettime(CLOCK_MONOTONIC, &t_end);\
-  *X = ((double)t_end.tv_sec + 1.0e-9 * t_end.tv_nsec) - ((double)t_start.tv_sec + 1.0e-9 * t_start.tv_nsec);
 
 #define cudaCheckError() {						\
     cudaError e = cudaGetLastError();					\
@@ -249,14 +243,14 @@ struct Matrix mat_mult_gpu(struct Matrix a, struct Matrix b, double *time)
   return out;
 }
 
-/**********
-* Compare * 
-***********/
+/**********************
+* Compare 2 functions * 
+***********************/
 
 int compare_results(
   struct Matrix (*fun_cpu)(struct Matrix, struct Matrix, double *),
   struct Matrix (*fun_gpu)(struct Matrix, struct Matrix, double *),
-  struct Matrix a, struct Matrix b)
+  struct Matrix a, struct Matrix b, const char *output_name)
 {
   /* Initialization */
   double time_cpu, time_gpu;
@@ -279,19 +273,25 @@ int compare_results(
   struct Matrix out_cpu = (*fun_cpu)(a, b, &time_cpu);
   struct Matrix out_gpu = (*fun_gpu)(a, b, &time_gpu);
   
-  printf("* CPU output:\n");
+  printf("* %s output:\n", output_name);
   print_matrix(out_cpu);
   printf("* GPU output:\n");
   print_matrix(out_gpu);
 
   /* Display time & Output */
-  printf("* Time taken:\nCPU: %fs\nGPU: %fs\n", time_cpu, time_gpu);
+  printf("* Time taken:\n%s: %fs\nGPU: %fs\n", output_name, time_cpu, time_gpu);
 
   int result = MatrixCmp(out_cpu, out_gpu);
   if (result == 0)
-    printf("Output are the same!\n");
+    printf("[OK] Output are the same!");
   else
-    printf("*** Error: Outputs are differents.\n");
+    printf("[KO] Outputs are differents.");
+  
+  if (time_gpu < time_cpu)
+    printf("\t[OK] GPU is fastest than %s!\n", output_name);
+  else
+    printf("\t[KO] %s is fastest than GPU\n", output_name);
+
   return result;
 }
 
@@ -300,15 +300,11 @@ int main(int argc, char **argv)
 {
   struct Matrix a = RandomMatrix(N, N);
   struct Matrix b = RandomMatrix(N, N);
+  const char *comparaisons[3] = {"CPU", "cuBLAS", "cuPARSE"};
 
-  /*
-  struct Matrix out_cpu = UninitializedMatrix(N, N);
-  struct Matrix out_gpu = UninitializedMatrix(N, N);
-
-  add_cpu(a, b, out_cpu, &time_cpu);
-  add_gpu(a, b, out_gpu, &time_gpu);
-  vec_mult_cpu(a, b, out_cpu, N, &time_cpu);
-  */
-
-  return compare_results(&add_cpu, &add_gpu, a, b); 
+  /* Compare CPU & GPU */
+  compare_results(&add_cpu, &add_gpu, a, b, comparaisons[0]); 
+  printf("\n");
+  /* Compare cuBLAS & GPU */
+  return compare_results(&add_cublas, &add_gpu, a, b, comparaisons[1]); 
 }

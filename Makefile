@@ -1,11 +1,13 @@
-SRC = $(addprefix src/, matrix.c helpers.c)
+SRC = $(addprefix src/, matrix.c helpers.c cuperf.c)
 OBJ = $(SRC:.c=.o)
 CUSRC = $(SRC:.c=.cu)
+CULIBS = -lcublas
 
 all:
 	cp src/matrix.c src/matrix.cu
 	cp src/helpers.c src/helpers.cu
-	nvcc $(CUSRC) -arch=sm_61 -O3 -o neo
+	cp src/cuperf.c src/cuperf.cu
+	nvcc $(CULIBS) $(CUSRC) -arch=sm_61 -O3 -o neo
 	@rm $(CUSRC)
 
 no-cuda:
