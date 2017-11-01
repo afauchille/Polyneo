@@ -112,6 +112,7 @@ struct Matrix add_cublas(struct Matrix a, struct Matrix b, double *time)
   return out;
 } 
 
+/* Unusued yet correct code. */
 int cu_test (void){
   cudaError_t cudaStat;    
   cublasStatus_t stat;
