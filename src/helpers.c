@@ -41,6 +41,28 @@ int IsNoneMatrix(struct Matrix m)
   return m.data == NULL && m.w == 0 && m.h == 0;
 }
 
+struct Matrix ToDevice(struct Matrix m)
+{
+  size_t size = m.w * m.h * DSIZE;
+  struct Matrix res;
+  res.w = m.w;
+  res.h = m.h;
+  cudaMalloc((void **) &res.data, size);
+  cudaMemcpy(res.data, m.data, size, cudaMemcpyHostToDevice);
+  return res;
+}
+
+struct Matrix ToHost(struct Matrix m)
+{
+  size_t size = m.w * m.h * DSIZE;
+  struct Matrix res;
+  res.w = m.w;
+  res.h = m.h;
+  res.data = (DTYPE*)malloc(size);
+  cudaMemcpy(res.data, m.data, size, cudaMemcpyDeviceToHost);
+  return res;
+}
+
 struct Matrix cp_gpu(struct Matrix a)
 {
   struct Matrix res;
