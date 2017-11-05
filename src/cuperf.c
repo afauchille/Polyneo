@@ -60,7 +60,8 @@ struct Matrix add_cublas(struct Matrix a, struct Matrix b, double *time)
   cublasOperation_t transb = CUBLAS_OP_N; // op(B) = B
   double alpha = 1; // scalar coefficient applied to A
   double beta = 1;  // scalar coefficient applied to B
-  int ld = 1; // leading dimension of array
+  int ld = a.w; // leading dimension of array
+  printf("%d\n", ld);
 
   int ret;
   int i, j;
@@ -89,9 +90,9 @@ struct Matrix add_cublas(struct Matrix a, struct Matrix b, double *time)
   CLOCK_STOP(time);
 
   /* Get data from cuBLAS */
-  stat = cublasGetMatrix (out.h, out.w, DSIZE, devPtrOut, out.h, out.data, out.h);
+  stat = cublasGetMatrix (out.h, out.w, DSIZE, devPtrOut, out.w, out.data, out.w);
   if (stat != CUBLAS_STATUS_SUCCESS) {
-      printf ("*** Data upload failed");
+      printf ("*** Data upload failed\n");
       cudaFree (devPtrOut);
       cublasDestroy(handle);        
   }    
