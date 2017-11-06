@@ -84,8 +84,14 @@ only_cuda(__host__)
 struct Matrix sc_mult_cpu(struct Matrix a, DTYPE lambda, double *time)
 {
   struct Matrix out = UninitializedMatrix(a.w, a.h);
+
+  CLOCK_START();
+
   for (int i = 0; i < a.w * a.h; ++i)
     out.data[i] = a.data[i] * lambda;
+
+  CLOCK_STOP(time);
+
   return out;
 }
 
@@ -155,6 +161,9 @@ struct Matrix mat_mult_cpu(struct Matrix a, struct Matrix b, double *time)
 {
   assert(a.w == b.h);
   struct Matrix out = UninitializedMatrix(a.h, b.w);
+
+  CLOCK_START();
+
   for (size_t i = 0; i < a.h; ++i)
     {
       for (int j = 0; j < b.w; ++j)
@@ -165,6 +174,9 @@ struct Matrix mat_mult_cpu(struct Matrix a, struct Matrix b, double *time)
           SET(out, i, j, res);
         }
     }
+
+  CLOCK_STOP(time);
+
   return out;
 }
 
@@ -214,7 +226,7 @@ int main(int argc, char **argv)
   const char *comparaisons[3] = {"CPU", "cuBLAS", "cuPARSE"};
 
   /* Compare CPU & GPU */
-  int result = compare_results(&add_cpu, &add_gpu, a, b, comparaisons[0]);
+  int result = compare_results(&mat_mult_cpu, &mat_mult_gpu, a, b, comparaisons[0]);
   CPUFree(a);
   CPUFree(b);
   return result;
