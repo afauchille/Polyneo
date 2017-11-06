@@ -22,9 +22,11 @@ int compare_results(
   b.data[3] = 1.0;
   b.data[6] = 1.0;
 
+  /*
   printf("* Inputs:\n");
   print_matrix(a);
   print_matrix(b);
+  */
 
   /* Running */
   struct Matrix out_cpu = (*fun_cpu)(a, b, &time_cpu);

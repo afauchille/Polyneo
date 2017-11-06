@@ -95,6 +95,7 @@ void CPUFree(struct Matrix m)
   free(m.data);
 }
 
+#define EPSILON double(0.0001)
 // 1 => False, 0 => True
 int MatrixCmp(struct Matrix a, struct Matrix b)
 {
@@ -102,7 +103,7 @@ int MatrixCmp(struct Matrix a, struct Matrix b)
     return 1;
   size_t n = a.w * a.h;
   for (size_t i=  0; i < n; ++i)
-    if (a.data[i] != b.data[i])
+    if (a.data[i] > b.data[i] + EPSILON || a.data[i] < b.data[i] - EPSILON)
       return 1;
   return 0;
 }

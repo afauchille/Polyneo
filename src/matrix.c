@@ -5,7 +5,7 @@
 #include "matrix.h"
 #include "cuperf.h"
 
-#define N 100
+#define N 1000
 
 /* No Cuda device compatibility */
 #ifdef NO_CUDA
@@ -186,35 +186,23 @@ void mat_mult_k(struct Matrix a, struct Matrix b, struct Matrix out)
 only_cuda(__host__)
 struct Matrix mat_mult_gpu(struct Matrix a, struct Matrix b, double *time)
 {
-  const size_t n = a.w * a.h;
-  const size_t size = n * DSIZE;
-  DTYPE *aG, *bG, *outG;
-  cudaMalloc((void **) &aG, size);
-  cudaMalloc((void **) &bG, size);
-  cudaMalloc((void **) &outG, size);
-  cudaMemcpy(aG, a.data, size, cudaMemcpyHostToDevice);
-  cudaMemcpy(bG, b.data, size, cudaMemcpyHostToDevice);
-  struct Matrix out = UninitializedMatrix(a.h, b.w);
+  assert(a.w == b.h);
 
-  cudaCheckError();
+  struct Matrix out = GPUMatrix(a.h, b.w);
 
-  // TODO: more dim
-  //int threads = 128;
-  //int blocks = (n + threads - 1) / threads;
+  dim3 threads(16, 16);
+  dim3 blocks((a.h + threads.x - 1) / threads.x, (b.w + threads.y - 1) / threads.y);
 
   // Timer start
   CLOCK_START();
 
-  //mat_mult_k<<<blocks, threads>>>(aG, bG, outG);
+  mat_mult_k<<<blocks, threads>>>(a, b, out);
   cudaDeviceSynchronize();
 
   cudaCheckError();
 
   // Timer end
   CLOCK_STOP(time);
-
-  cudaMemcpy(out.data, outG, size, cudaMemcpyDeviceToHost);
-  cudaCheckError();
 
   return out;
 }
