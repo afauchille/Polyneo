@@ -5,21 +5,14 @@
 #include "matrix.h"
 #include "cuperf.h"
 
-#define N 3
+#define N 100
 
+/* No Cuda device compatibility */
 #ifdef NO_CUDA
   #define only_cuda(X)
 #else
   #define only_cuda(X) X
 #endif
-
-#define cudaCheckError() {						\
-    cudaError e = cudaGetLastError();					\
-    if (e != cudaSuccess) {						\
-      printf("Cuda failure %s:%d: '%s'\n", __FILE__, __LINE__, cudaGetErrorString(e)); \
-      exit(EXIT_FAILURE);						\
-    }									\
-  }
 
 /* Matrix indexing */
 
@@ -59,25 +52,18 @@ __host__
 struct Matrix add_gpu(struct Matrix a, struct Matrix b, double *time)
 {
   assert(a.w == b.w && a.h == b.h);
-  struct Matrix out = UninitializedMatrix(a.w, a.h);
-  const size_t n = a.w * a.h;
-  const size_t size = n * DSIZE;
-  DTYPE *aG, *bG, *outG;
-  cudaMalloc((void **) &aG, size);
-  cudaMalloc((void **) &bG, size);
-  cudaMalloc((void **) &outG, size);
-  cudaMemcpy(aG, a.data, size, cudaMemcpyHostToDevice);
-  cudaMemcpy(bG, b.data, size, cudaMemcpyHostToDevice);
+  struct Matrix out = GPUMatrix(a.w, a.h);
 
   cudaCheckError();
 
+  size_t n = a.w * a.h;
   int threads = 128;
   int blocks = (n + threads - 1) / threads;
 
   // Timer start
   CLOCK_START();
 
-  add_k<<<blocks, threads>>>(aG, bG, outG, n);
+  add_k<<<blocks, threads>>>(a.data, b.data, out.data, n);
   cudaDeviceSynchronize();
 
   cudaCheckError();
@@ -85,8 +71,6 @@ struct Matrix add_gpu(struct Matrix a, struct Matrix b, double *time)
   // Timer end
   CLOCK_STOP(time);
 
-  cudaMemcpy(out.data, outG, size, cudaMemcpyDeviceToHost);
-  cudaCheckError();
   return out;
 }
 #endif
@@ -115,15 +99,8 @@ void sc_mult_k(const DTYPE *a, DTYPE lambda, DTYPE *out, size_t n)
 
 struct Matrix sc_mult_gpu(struct Matrix a, DTYPE lambda, double *time)
 {
-  struct Matrix out = UninitializedMatrix(a.w, a.h);
+  struct Matrix out = GPUMatrix(a.w, a.h);
   const size_t n = a.w * a.h;
-  const size_t size = n * DSIZE;
-  DTYPE *aG, *outG;
-  cudaMalloc((void **) &aG, size);
-  cudaMalloc((void **) &outG, size);
-  cudaMemcpy(aG, a.data, size, cudaMemcpyHostToDevice);
-
-  cudaCheckError();
 
   int threads = 128;
   int blocks = (n + threads - 1) / threads;
@@ -131,7 +108,7 @@ struct Matrix sc_mult_gpu(struct Matrix a, DTYPE lambda, double *time)
   // Timer start
   CLOCK_START();
 
-  sc_mult_k<<<blocks, threads>>>(aG, lambda, outG, n);
+  sc_mult_k<<<blocks, threads>>>(a.data, lambda, out.data, n);
   cudaDeviceSynchronize();
 
   cudaCheckError();
@@ -139,8 +116,6 @@ struct Matrix sc_mult_gpu(struct Matrix a, DTYPE lambda, double *time)
   // Timer end
   CLOCK_STOP(time);
 
-  cudaMemcpy(out.data, outG, size, cudaMemcpyDeviceToHost);
-  cudaCheckError();
   return out;
 }
 
@@ -251,8 +226,8 @@ int main(int argc, char **argv)
   const char *comparaisons[3] = {"CPU", "cuBLAS", "cuPARSE"};
 
   /* Compare CPU & GPU */
-  compare_results(&add_cpu, &add_gpu, a, b, comparaisons[0]); 
-  printf("\n");
-  /* Compare cuBLAS & GPU */
-  return compare_results(&add_cublas, &add_gpu, a, b, comparaisons[1]); 
+  int result = compare_results(&add_cpu, &add_gpu, a, b, comparaisons[0]);
+  CPUFree(a);
+  CPUFree(b);
+  return result;
 }

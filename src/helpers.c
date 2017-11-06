@@ -3,6 +3,15 @@
 
 #include "helpers.h"
 
+struct Matrix GPUMatrix(size_t w, size_t h)
+{
+  struct Matrix m;
+  m.w = w;
+  m.h = h;
+  cudaMalloc((void **)&(m.data), w * h * DSIZE);
+  return m;
+}
+
 // This is a floating point data implementation. If DTYPE == int or similar the function has undefined behaviour
 struct Matrix RandomMatrix(size_t w, size_t h)
 {
@@ -71,7 +80,19 @@ struct Matrix cp_gpu(struct Matrix a)
   cudaMemcpy(res.data, a.data, size, cudaMemcpyHostToDevice);
   res.w = a.w;
   res.h = a.h;
+  cudaCheckError();
   return res;
+}
+
+void GPUFree(struct Matrix m)
+{
+  cudaFree(m.data);
+  cudaCheckError();
+}
+
+void CPUFree(struct Matrix m)
+{
+  free(m.data);
 }
 
 // 1 => False, 0 => True

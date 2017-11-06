@@ -19,6 +19,13 @@
 #define CLOCK_STOP(X) clock_gettime(CLOCK_MONOTONIC, &t_end);\
   *X = ((double)t_end.tv_sec + 1.0e-9 * t_end.tv_nsec) - ((double)t_start.tv_sec + 1.0e-9 * t_start.tv_nsec);
 
+#define cudaCheckError() {						\
+    cudaError e = cudaGetLastError();					\
+    if (e != cudaSuccess) {						\
+      printf("Cuda failure %s:%d: '%s'\n", __FILE__, __LINE__, cudaGetErrorString(e)); \
+      exit(EXIT_FAILURE);						\
+    }									\
+  }
 
 struct Matrix {
   DTYPE* data;
