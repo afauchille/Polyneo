@@ -221,14 +221,50 @@ struct Matrix mat_mult_gpu(struct Matrix a, struct Matrix b, double *time)
 * Determinant computation *
 **************************/
 
+__host__
 DTYPE det(struct Matrix m)
 {
   assert(m.w == m.h);
+
+  struct Matrix l = IdentityMatrix(m.w);
+  struct Matrix u = ZeroMatrix(m.w, m.h);
+
+  for (size_t j = 0; j < m.w; j += 1)
+    {
+      ;
+    }
+
+  CPUFree(l);
+  CPUFree(u);
+
   return (DTYPE)0;
+}
+
+/*************
+* Benchmarks *
+*************/
+void bench_mult()
+{
+  for (size_t n = 100;; n += 100)
+    {
+      double time;
+      struct Matrix a = RandomMatrix(n, n);
+      struct Matrix b = RandomMatrix(n, n);
+      struct Matrix a_d = ToDevice(a);
+      struct Matrix b_d = ToDevice(b);
+      // Dont't need output
+      GPUFree(mat_mult_gpu(a_d, b_d, &time));
+      GPUFree(a_d);
+      GPUFree(b_d);
+      CPUFree(a);
+      CPUFree(b);
+      printf("Matrix multplication %dx%d: %fs taken\n", n, n, time);
+    }
 }
 
 int main(int argc, char **argv)
 {
+  /*
   const size_t N = 5;
   struct Matrix a = RandomMatrix(N, N);
   struct Matrix b = RandomMatrix(N, N);
@@ -238,11 +274,13 @@ int main(int argc, char **argv)
   CPUFree(aa);
   struct Matrix bb = IdentityMatrix(N);
   print_matrix(bb);
-  CPUFree(bb);
+  CPUFree(bb);*/
 
   /* Compare CPU & GPU */
-  int result = compare_results(&mat_mult_cpu, &mat_mult_gpu, a, b, comparaisons[0]);
+  /*int result = compare_results(&mat_mult_cpu, &mat_mult_gpu, a, b, comparaisons[0]);
   CPUFree(a);
   CPUFree(b);
-  return result;
+  return result;*/
+  bench_mult();
+  return 0;
 }
