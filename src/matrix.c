@@ -245,7 +245,8 @@ DTYPE det(struct Matrix m)
 *************/
 void bench_mult()
 {
-  for (size_t n = 100;; n += 100)
+  FILE *f = fopen("mult.bench", "w+");
+  for (size_t n = 100; n <= 7000; n += 100)
     {
       double time;
       struct Matrix a = RandomMatrix(n, n);
@@ -258,8 +259,10 @@ void bench_mult()
       GPUFree(b_d);
       CPUFree(a);
       CPUFree(b);
-      printf("Matrix multplication %dx%d: %fs taken\n", n, n, time);
+      fprintf(f, "%d %f\n", n, time);
+      fflush(f);
     }
+  fclose(f);
 }
 
 int main(int argc, char **argv)
