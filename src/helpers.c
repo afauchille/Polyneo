@@ -15,13 +15,32 @@ struct Matrix GPUMatrix(size_t w, size_t h)
 // This is a floating point data implementation. If DTYPE == int or similar the function has undefined behaviour
 struct Matrix RandomMatrix(size_t w, size_t h)
 {
+  struct Matrix m = UninitializedMatrix(w, h);
+  size_t n = w * h;
+  for (size_t i = 0; i < n; ++i)
+    m.data[i] = (DTYPE)rand() / (DTYPE)RAND_MAX;
+  return m;
+}
+
+struct Matrix IdentityMatrix(size_t n)
+{
+  struct Matrix m;
+  m.w = n;
+  m.h = n;
+  size_t nn = n * n;
+  m.data = (DTYPE*)calloc(nn, DSIZE);
+  for (int i = 0; i < nn; i += n + 1)
+    m.data[i] = (DTYPE)1;
+  return m;
+}
+
+struct Matrix ZeroMatrix(size_t w, size_t h)
+{
   struct Matrix m;
   m.w = w;
   m.h = h;
   size_t n = w * h;
-  m.data = (DTYPE*)malloc(n * DSIZE);
-  for (size_t i = 0; i < n; ++i)
-    m.data[i] = (DTYPE)rand() / (DTYPE)RAND_MAX;
+  m.data = (DTYPE*)calloc(n, DSIZE);
   return m;
 }
 
@@ -123,8 +142,8 @@ void print_mat(float *matrix, size_t n)
 
 void print_matrix(struct Matrix matrix)
 {
-  //size_t nb_lines = matrix->w;
-  size_t nb_lines = 10;
+  const size_t max_col = 10;
+  size_t nb_lines = matrix.w < max_col ? matrix.w : max_col;
   for (size_t i = 0; i < matrix.w * matrix.h ; ++i)
   {
     if (i != 0 && i % nb_lines == 0)
@@ -132,5 +151,5 @@ void print_matrix(struct Matrix matrix)
     else
       printf("%3f ", matrix.data[i]);
   }
-  printf("\n");
+  printf("\n\n");
 }

@@ -5,6 +5,8 @@
 struct Matrix GPUMatrix(size_t w, size_t h);
 
 struct Matrix RandomMatrix(size_t w, size_t h);
+struct Matrix IdentityMatrix(size_t n);
+struct Matrix ZeroMatrix(size_t w, size_t h);
 struct Matrix UninitializedMatrix(size_t w, size_t h);
 struct Matrix NoneMatrix();
 

@@ -5,8 +5,6 @@
 #include "matrix.h"
 #include "cuperf.h"
 
-#define N 1000
-
 /* No Cuda device compatibility */
 #ifdef NO_CUDA
   #define only_cuda(X)
@@ -219,11 +217,28 @@ struct Matrix mat_mult_gpu(struct Matrix a, struct Matrix b, double *time)
   return out;
 }
 
+/**************************
+* Determinant computation *
+**************************/
+
+DTYPE det(struct Matrix m)
+{
+  assert(m.w == m.h);
+  return (DTYPE)0;
+}
+
 int main(int argc, char **argv)
 {
+  const size_t N = 5;
   struct Matrix a = RandomMatrix(N, N);
   struct Matrix b = RandomMatrix(N, N);
   const char *comparaisons[3] = {"CPU", "cuBLAS", "cuPARSE"};
+  struct Matrix aa = ZeroMatrix(N, N);
+  print_matrix(aa);
+  CPUFree(aa);
+  struct Matrix bb = IdentityMatrix(N);
+  print_matrix(bb);
+  CPUFree(bb);
 
   /* Compare CPU & GPU */
   int result = compare_results(&mat_mult_cpu, &mat_mult_gpu, a, b, comparaisons[0]);
