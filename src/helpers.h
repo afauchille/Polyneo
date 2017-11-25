@@ -2,7 +2,7 @@
 # define HELPHERS_H
 # include "matrix.h"
 
-#define EPSILON double(1e-4)
+#define EPSILON double(1e-5)
 #define FLOAT_EQ(X, Y) (X < Y + EPSILON && X > Y - EPSILON)
 
 struct Matrix GPUMatrix(size_t w, size_t h);
