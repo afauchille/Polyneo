@@ -257,14 +257,15 @@ struct Matrix lu(struct Matrix m)
     }
 
   // Debug part (not useful because it works)
-  print_matrix(m);
+  //print_matrix(m);
   struct Matrix lu_res = mat_mult_cpu(l, u, NULL);
-  print_matrix(lu_res);
+  //print_matrix(lu_res);
 
-  if (!MatrixCmp(m, lu_res))
+  if (MatrixCmp(m, lu_res))
+    exit(2);/*
     printf("Success!\n");
   else
-    printf("Faaaaaaaaaaaaiiiiiiil!\n");
+  printf("Faaaaaaaaaaaaiiiiiiil!\n");*/
   // not accurate: there is 1 more in each cell of the diagonal, because of l initialization
   struct Matrix ret = add_cpu(l, u, NULL);
   CPUFree(l);
@@ -274,12 +275,12 @@ struct Matrix lu(struct Matrix m)
 }
 
 __host__
-DTYPE det_cpu(struct Matrix m)
+DTYPE det_cpu(struct Matrix m, double *time)
 {
   assert(m.w == m.h);
-
+  CLOCK_START();
   struct Matrix lu_mat = lu(m);
-
+  CLOCK_STOP(time);
   DTYPE res = 0;
   for (size_t i = 0; i < m.w; ++i)
     res *= GET(m, i, i) - 1; // the -1 corrects the incorrect addition of l + u
@@ -314,6 +315,18 @@ void bench_mult()
   fclose(f);
 }
 
+void bench_det()
+{
+  for (size_t n = 1000; n <= 4000; n += 100)
+    {
+      double time;
+      struct Matrix a = RandomMatrix(n, n);
+      det_cpu(a, &time);
+      printf("%d %f\n", n, time);
+      CPUFree(a);
+    }
+}
+
 
 #define PRINT 1
 #define NO_PRINT 0
@@ -340,7 +353,7 @@ int main(int argc, char **argv)
     {
       const size_t N = 10;
       struct Matrix a = RandomMatrix(N, N);
-      det_cpu(a);
+      det_cpu(a, NULL);
       CPUFree(a);
       return 0;
     }
@@ -350,6 +363,16 @@ int main(int argc, char **argv)
   if (strcmp(argv[1], "check") == 0)
     ret = check_mult(5, NO_PRINT);
   else if (strcmp(argv[1], "bench") == 0)
-    bench_mult();
+    {
+      if (argc < 2)
+        {
+          printf("Usage: ./neo bench [mult|det]");
+          return 1;
+        }
+      if (strcmp(argv[2], "mult") == 0)
+        bench_mult();
+      else if (strcmp(argv[2], "det") == 0)
+        bench_det();
+    }
   return ret;
 }
