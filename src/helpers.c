@@ -103,6 +103,17 @@ struct Matrix cp_gpu(struct Matrix a)
   return res;
 }
 
+struct Matrix cp_cpu(struct Matrix a)
+{
+  struct Matrix res;
+  const size_t size = a.w * a.h * DSIZE;
+  res.data = (DTYPE*)malloc(size);
+  memcpy(res.data, a.data, size);
+  res.w = a.w;
+  res.h = a.h;
+  return res;
+}
+
 void GPUFree(struct Matrix m)
 {
   cudaFree(m.data);
@@ -114,7 +125,6 @@ void CPUFree(struct Matrix m)
   free(m.data);
 }
 
-#define EPSILON double(0.0001)
 // 1 => False, 0 => True
 int MatrixCmp(struct Matrix a, struct Matrix b)
 {
@@ -122,7 +132,7 @@ int MatrixCmp(struct Matrix a, struct Matrix b)
     return 1;
   size_t n = a.w * a.h;
   for (size_t i=  0; i < n; ++i)
-    if (a.data[i] > b.data[i] + EPSILON || a.data[i] < b.data[i] - EPSILON)
+    if (!FLOAT_EQ(a.data[i], b.data[i]))
       return 1;
   return 0;
 }

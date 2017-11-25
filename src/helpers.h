@@ -2,6 +2,9 @@
 # define HELPHERS_H
 # include "matrix.h"
 
+#define EPSILON double(1e-4)
+#define FLOAT_EQ(X, Y) (X < Y + EPSILON && X > Y - EPSILON)
+
 struct Matrix GPUMatrix(size_t w, size_t h);
 
 struct Matrix RandomMatrix(size_t w, size_t h);
@@ -16,6 +19,7 @@ int IsNoneMatrix(struct Matrix m);
 struct Matrix ToDevice(struct Matrix m);
 struct Matrix ToHost(struct Matrix m);
 struct Matrix cp_gpu(struct Matrix a);
+struct Matrix cp_cpu(struct Matrix a);
 void GPUFree(struct Matrix m);
 void CPUFree(struct Matrix m);
 
