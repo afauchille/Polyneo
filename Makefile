@@ -11,6 +11,9 @@ all:
 	nvcc $(CULIBS) $(CUSRC) -arch=sm_61 -O3 -o neo
 	@rm $(CUSRC)
 
+check: all
+	./neo check
+
 no-cuda:
 	gcc src/matrix.c -DNO_CUDA -O3 -o neo_no_cuda
 

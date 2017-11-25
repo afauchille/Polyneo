@@ -265,25 +265,37 @@ void bench_mult()
   fclose(f);
 }
 
-int main(int argc, char **argv)
+
+#define PRINT 1
+#define NO_PRINT 0
+
+int check_mult(size_t N, int print)
 {
-  /*
-  const size_t N = 5;
+  const char *comparaisons[3] = {"CPU", "cuBLAS", "cuPARSE"};
+
   struct Matrix a = RandomMatrix(N, N);
   struct Matrix b = RandomMatrix(N, N);
-  const char *comparaisons[3] = {"CPU", "cuBLAS", "cuPARSE"};
-  struct Matrix aa = ZeroMatrix(N, N);
-  print_matrix(aa);
-  CPUFree(aa);
-  struct Matrix bb = IdentityMatrix(N);
-  print_matrix(bb);
-  CPUFree(bb);*/
 
   /* Compare CPU & GPU */
-  /*int result = compare_results(&mat_mult_cpu, &mat_mult_gpu, a, b, comparaisons[0]);
+  int result = compare_results(&mat_mult_cpu, &mat_mult_gpu, a, b, comparaisons[0]);
   CPUFree(a);
   CPUFree(b);
-  return result;*/
-  bench_mult();
-  return 0;
+  return result;
+}
+
+int main(int argc, char **argv)
+{
+  /* No args */
+  if (argc == 1)
+    {
+      return 0;
+    }
+
+  /* else if argc > 1 */
+  int ret = 0;
+  if (strcmp(argv[1], "check") == 0)
+    ret = check_mult(5, NO_PRINT);
+  else if (strcmp(argv[1], "bench") == 0)
+    bench_mult();
+  return ret;
 }
