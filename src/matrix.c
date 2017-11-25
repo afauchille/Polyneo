@@ -233,22 +233,60 @@ struct Matrix mat_mult_gpu(struct Matrix a, struct Matrix b, double *time)
 **************************/
 
 __host__
-DTYPE det(struct Matrix m)
+struct Matrix lu(struct Matrix m)
+{
+  assert(m.w == m.h);
+  // TODO: make ZeroMatrix for accurate return value
+  struct Matrix l = IdentityMatrix(m.w);
+  struct Matrix u = cp_cpu(m);
+
+  // Trick for easily dividing first line by M[0,0]
+  //sc_mult_cpu_in_place((struct Matrix){u.data, u.w, 1}, 1 / *u.data, NULL);
+
+  for (size_t j = 1; j < u.h; ++j)
+    {
+      for (size_t i = 0; i < j; ++i)
+        {
+          DTYPE div = GET(u, i, i);
+          assert(!FLOAT_EQ(div, 0));
+          DTYPE pivot = GET(u, i, j) / div;
+          SET(l, i, j, pivot);
+          for (size_t k = 0; k < u.w; ++k)
+            GET(u, k, j) -= pivot * GET(u, k, i);
+        }
+    }
+
+  // Debug part (not useful because it works)
+  print_matrix(m);
+  struct Matrix lu_res = mat_mult_cpu(l, u, NULL);
+  print_matrix(lu_res);
+
+  if (!MatrixCmp(m, lu_res))
+    printf("Success!\n");
+  else
+    printf("Faaaaaaaaaaaaiiiiiiil!\n");
+  // not accurate: there is 1 more in each cell of the diagonal, because of l initialization
+  struct Matrix ret = add_cpu(l, u, NULL);
+  CPUFree(l);
+  CPUFree(u);
+  CPUFree(lu_res);
+  return ret;
+}
+
+__host__
+DTYPE det_cpu(struct Matrix m)
 {
   assert(m.w == m.h);
 
-  struct Matrix l = IdentityMatrix(m.w);
-  struct Matrix u = ZeroMatrix(m.w, m.h);
+  struct Matrix lu_mat = lu(m);
 
-  for (size_t j = 0; j < m.w; j += 1)
-    {
-      ;
-    }
+  DTYPE res = 0;
+  for (size_t i = 0; i < m.w; ++i)
+    res *= GET(m, i, i) - 1; // the -1 corrects the incorrect addition of l + u
 
-  CPUFree(l);
-  CPUFree(u);
+  CPUFree(lu_mat);
 
-  return (DTYPE)0;
+  return res;
 }
 
 /*************
@@ -280,6 +318,7 @@ void bench_mult()
 #define PRINT 1
 #define NO_PRINT 0
 
+// print param isn't used but it could be
 int check_mult(size_t N, int print)
 {
   const char *comparaisons[3] = {"CPU", "cuBLAS", "cuPARSE"};
@@ -299,6 +338,10 @@ int main(int argc, char **argv)
   /* No args */
   if (argc == 1)
     {
+      const size_t N = 10;
+      struct Matrix a = RandomMatrix(N, N);
+      det_cpu(a);
+      CPUFree(a);
       return 0;
     }
 
