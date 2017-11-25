@@ -131,7 +131,7 @@ int MatrixCmp(struct Matrix a, struct Matrix b)
   if (a.w != b.w || a.h != b.h)
     return 1;
   size_t n = a.w * a.h;
-  for (size_t i=  0; i < n; ++i)
+  for (size_t i =  0; i < n; ++i)
     if (!FLOAT_EQ(a.data[i], b.data[i]))
       return 1;
   return 0;

@@ -77,21 +77,32 @@ struct Matrix add_gpu(struct Matrix a, struct Matrix b, double *time)
 * Scalar multiplication *
 *************************/
 
-// TODO: add in place version
-only_cuda(__host__)
-struct Matrix sc_mult_cpu(struct Matrix a, DTYPE lambda, double *time)
-{
-  struct Matrix out = UninitializedMatrix(a.w, a.h);
+/* CPU */
 
+void _sc_mult_cpu_impl(struct Matrix a, struct Matrix out, DTYPE lambda, double *time)
+{
   CLOCK_START();
 
   for (int i = 0; i < a.w * a.h; ++i)
     out.data[i] = a.data[i] * lambda;
 
   CLOCK_STOP(time);
+}
 
+struct Matrix sc_mult_cpu(struct Matrix a, DTYPE lambda, double *time)
+{
+  struct Matrix out = UninitializedMatrix(a.w, a.h);
+  _sc_mult_cpu_impl(a, out, lambda, time);
   return out;
 }
+
+void sc_mult_cpu_in_place(struct Matrix a, DTYPE lambda, double *time)
+{
+  _sc_mult_cpu_impl(a, a, lambda, time);
+}
+
+
+/* GPU */
 
 only_cuda(__global__
 void sc_mult_k(const DTYPE *a, DTYPE lambda, DTYPE *out, size_t n)

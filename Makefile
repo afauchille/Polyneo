@@ -8,7 +8,7 @@ all:
 	@cp src/helpers.c src/helpers.cu
 	@cp src/cuperf.c src/cuperf.cu
 	@cp src/tests.c src/tests.cu
-	nvcc $(CULIBS) $(CUSRC) -arch=sm_61 -O3 -o neo
+	nvcc $(CULIBS) $(CUSRC) -arch=sm_61 -O3 -o neo -g
 	@rm $(CUSRC)
 
 check: all
