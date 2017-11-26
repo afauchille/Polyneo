@@ -353,9 +353,23 @@ int main(int argc, char **argv)
     {
       const size_t N = 10;
       struct Matrix a = RandomMatrix(N, N);
-      det_cpu(a, NULL);
+      struct Matrix b = RandomMatrix(N, N);
+      struct Matrix a_gpu = ToDevice(a);
+      struct Matrix b_gpu = ToDevice(b);
+      double t_cublas;
+      double t_gpu = 0;
+      struct Matrix c_cublas = ToHost(mat_mult_cublas(b_gpu, a_gpu, &t_cublas));
+      struct Matrix c_gpu = mat_mult_gpu(a_gpu, b_gpu, &t_gpu);
+      struct Matrix c = ToHost(c_gpu);
+      int res = MatrixCmp(c, c_cublas);
+      print_matrix(c_cublas);
+      print_matrix(c);
+      if (res)
+        printf("Noob\n");
+      printf("Cublas time: %fs\nOur time:    %fs\n", t_cublas, t_gpu);
       CPUFree(a);
-      return 0;
+      CPUFree(b);
+      return res;
     }
 
   /* else if argc > 1 */
