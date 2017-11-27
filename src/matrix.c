@@ -274,16 +274,96 @@ __host__
 DTYPE det_cpu(struct Matrix m, double *time)
 {
   assert(m.w == m.h);
+
   CLOCK_START();
+
   struct Matrix lu_mat = lu(m);
-  CLOCK_STOP(time);
+
   DTYPE res = 0;
   for (size_t i = 0; i < m.w; ++i)
     res *= GET(m, i, i) - 1; // the -1 corrects the incorrect addition of l + u
 
+  CLOCK_STOP(time);
+
   CPUFree(lu_mat);
 
   return res;
+}
+
+/* GPU */
+
+__device__
+void substract_k(DTYPE *u_row_i, DTYPE *u_row_j, DTYPE *l_cell, DTYPE *numerator, DTYPE *denominator, size_t n)
+{
+  const DTYPE pivot = *numerator / *denominator;
+  *l_cell = pivot;
+
+  size_t id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (id < n)
+    *(u_row_j + id) -= pivot * *(u_row_i + id);
+}
+
+__device__
+void reduce_k(struct Matrix u)
+{
+  size_t id = blockIdx.x * blockDim.x + threadIdx.x;
+  for (size_t n = u.w; id < n; n = (n + 1) / 2)
+    {
+      if (id < n / 2)
+        return; // My job here is done
+
+      size_t right_id = id + (n + 1) / 2; // to handle odd n
+      GET(u, id, id) *= GET(u, right_id, right_id);
+
+      __syncthreads();
+    }
+}
+
+__host__
+struct Matrix lu_gpu(struct Matrix m)
+{
+  struct Matrix u = cp_gpu(m);
+  struct Matrix l_cpu = IdentityMatrix(m.w);
+  struct Matrix l = ToDevice(l_cpu);
+  CPUFree(l_cpu);
+
+  for (size_t j = 1; j < u.h; ++j)
+    {
+      for (size_t i = 0; i < j; ++i)
+        {
+          DTYPE *denominator = u.data + (i + 1) * u.w;
+          DTYPE *numerator = u.data + j * u.w + i;
+          DTYPE *l_cell = l.data +  j * u.w + i;
+          DTYPE *u_row_i = u.data + i * u.w;
+          DTYPE *u_row_j = u.data + j * u.w;
+
+          int threads = 128;
+          int blocks = (n + threads - 1) / threads;
+
+          substract_k<<<blocks, threads>>>(u_row_i, u_row_j, l_cell, numerator, denominator, u.w);
+        }
+    }
+
+  return u;
+}
+
+__host__
+DTYPE det_gpu(struct Matrix m, double *time)
+{
+  assert(m.w == m.h);
+
+  CLOCK_START();
+
+  struct Matrix lu_mat = lu_gpu(m);
+
+  int threads = 128;
+  int blocks = (u.w + threads - 1) / threads;
+
+  reduce_k<<<blocks, threads>>>(lu_mat);
+
+  CLOCK_STOP(time);
+
+  return *(u.data);
 }
 
 /*************
