@@ -142,21 +142,17 @@ struct Matrix sc_mult_gpu(struct Matrix a, DTYPE lambda, double *time)
 only_cuda(__host__)
 struct Matrix vec_mult_cpu(struct Matrix a, struct Matrix b, double *time)
 {
+  assert(a.w == b.h);
   struct Matrix out = UninitializedMatrix(b.w, a.h);
-  // Exception si a.h != b.w
   for (int i = 0; i < out.h; ++i)
     for (int j = 0; j < out.w; ++j)
     {
-      float somme = 0;
+      float res = 0;
       for (int k = 0; k < out.w; ++k)
       {
-        int indice2 = out.h * k + i;
-        int indice1 = out.h * j + k;
-        printf("indice1: %d\tindice2: %d\n", indice1, indice2);
-        somme += a.data[indice1] * b.data[indice2];
-        printf("%f\n", somme);
+        res += a.data[out.h * j + k] * b.data[out.h * k + i];
       }
-      out.data[out.h * j + i] = somme;
+      out.data[out.h * j + i] = res;
     }
   return out;
 }
