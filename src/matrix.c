@@ -292,7 +292,7 @@ DTYPE det_cpu(struct Matrix m, double *time)
 
 /* GPU */
 
-__device__
+__global__
 void substract_k(DTYPE *u_row_i, DTYPE *u_row_j, DTYPE *l_cell, DTYPE *numerator, DTYPE *denominator, size_t n)
 {
   const DTYPE pivot = *numerator / *denominator;
@@ -303,7 +303,7 @@ void substract_k(DTYPE *u_row_i, DTYPE *u_row_j, DTYPE *l_cell, DTYPE *numerator
     *(u_row_j + id) -= pivot * *(u_row_i + id);
 }
 
-__device__
+__global__
 void reduce_k(struct Matrix u)
 {
   size_t id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -338,12 +338,12 @@ struct Matrix lu_gpu(struct Matrix m)
           DTYPE *u_row_j = u.data + j * u.w;
 
           int threads = 128;
-          int blocks = (n + threads - 1) / threads;
+          int blocks = (u.w + threads - 1) / threads;
 
           substract_k<<<blocks, threads>>>(u_row_i, u_row_j, l_cell, numerator, denominator, u.w);
         }
     }
-
+  GPUFree(l);
   return u;
 }
 
@@ -357,13 +357,15 @@ DTYPE det_gpu(struct Matrix m, double *time)
   struct Matrix lu_mat = lu_gpu(m);
 
   int threads = 128;
-  int blocks = (u.w + threads - 1) / threads;
+  int blocks = (lu_mat.w + threads - 1) / threads;
 
   reduce_k<<<blocks, threads>>>(lu_mat);
 
   CLOCK_STOP(time);
 
-  return *(u.data);
+  DTYPE res = *(lu_mat.data);
+  GPUFree(lu_mat);
+  return res;
 }
 
 /*************
